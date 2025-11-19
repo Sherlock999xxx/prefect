@@ -3470,10 +3470,13 @@ class TestFlowConcurrencyLimits:
         }
         if collision_strategy or grace_period_seconds is not None:
             deployment_kwargs["concurrency_options"] = {
-                "collision_strategy": collision_strategy or schemas.core.ConcurrencyLimitStrategy.ENQUEUE
+                "collision_strategy": collision_strategy
+                or schemas.core.ConcurrencyLimitStrategy.ENQUEUE
             }
             if grace_period_seconds is not None:
-                deployment_kwargs["concurrency_options"]["grace_period_seconds"] = grace_period_seconds
+                deployment_kwargs["concurrency_options"]["grace_period_seconds"] = (
+                    grace_period_seconds
+                )
 
         deployment = await deployments.create_deployment(
             session=session,
@@ -4640,7 +4643,9 @@ class TestFlowConcurrencyLimits:
         lease = await lease_storage.read_lease(lease_id=lease_id)
         assert lease is not None
 
-        expected_seconds = get_current_settings().server.concurrency.initial_deployment_lease_duration
+        expected_seconds = (
+            get_current_settings().server.concurrency.initial_deployment_lease_duration
+        )
         actual_ttl_seconds = (lease.expiration - created_at).total_seconds()
         assert abs(actual_ttl_seconds - expected_seconds) < 5
 
@@ -4652,7 +4657,10 @@ class TestFlowConcurrencyLimits:
     ):
         """Test that default grace period (600s) is used when concurrency_options exists but grace_period_seconds is not set."""
         deployment = await self.create_deployment_with_concurrency_limit(
-            session, 1, flow, collision_strategy=schemas.core.ConcurrencyLimitStrategy.ENQUEUE
+            session,
+            1,
+            flow,
+            collision_strategy=schemas.core.ConcurrencyLimitStrategy.ENQUEUE,
         )
 
         pending_transition = (states.StateType.SCHEDULED, states.StateType.PENDING)
